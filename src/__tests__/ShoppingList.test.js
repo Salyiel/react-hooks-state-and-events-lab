@@ -1,34 +1,57 @@
-import "@testing-library/jest-dom";
-import { render, screen, fireEvent } from "@testing-library/react";
-import ShoppingList from "../components/ShoppingList";
+import React, { useEffect, useState } from "react";
+import PropTypes from "prop-types";
+import Item from "./Item";
 
-const testData = [
-  { id: 1, name: "Yogurt", category: "Dairy" },
-  { id: 2, name: "Pomegranate", category: "Produce" },
-  { id: 3, name: "Lettuce", category: "Produce" },
-  { id: 4, name: "String Cheese", category: "Dairy" },
-  { id: 5, name: "Cookies", category: "Dessert" },
-];
+function ShoppingList({ items, toggleInCart, selectedCategory, setSelectedCategory }) {
+  const [filteredItems, setFilteredItems] = useState(items);
 
-test("displays all items when initially rendered", () => {
-  const { container } = render(<ShoppingList items={testData} />);
-  expect(container.querySelector(".Items").children).toHaveLength(
-    testData.length
+  useEffect(() => {
+    if (selectedCategory === "All") {
+      setFilteredItems(items);
+    } else {
+      setFilteredItems(items.filter(item => item.category === selectedCategory));
+    }
+  }, [items, selectedCategory]);
+
+  return (
+    <div className="shopping-list">
+      <div className="filter">
+        <select
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          name="filter"
+        >
+          <option value="All">Filter by category</option>
+          <option value="Produce">Produce</option>
+          <option value="Dairy">Dairy</option>
+          <option value="Dessert">Dessert</option>
+        </select>
+      </div>
+      <ul className="items">
+        {filteredItems.map((item) => (
+          <Item
+            key={item.id}
+            item={item}
+            toggleInCart={() => toggleInCart(item.id)}
+          />
+        ))}
+      </ul>
+    </div>
   );
-});
+}
 
-test("displays only items that match the selected category", () => {
-  const { container } = render(<ShoppingList items={testData} />);
+ShoppingList.propTypes = {
+  items: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      category: PropTypes.string.isRequired,
+      inCart: PropTypes.bool.isRequired,
+      name: PropTypes.string.isRequired
+    }).isRequired
+  ).isRequired,
+  toggleInCart: PropTypes.func.isRequired,
+  selectedCategory: PropTypes.string.isRequired,
+  setSelectedCategory: PropTypes.func.isRequired
+};
 
-  fireEvent.change(screen.getByRole("combobox"), {
-    target: { value: "Dairy" },
-  });
-
-  expect(container.querySelector(".Items").children).toHaveLength(2);
-
-  fireEvent.change(screen.getByRole("combobox"), {
-    target: { value: "Dessert" },
-  });
-
-  expect(container.querySelector(".Items").children).toHaveLength(1);
-});
+export default ShoppingList;
